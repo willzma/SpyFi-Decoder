@@ -69,7 +69,15 @@ public class Main {
             writer = new BufferedWriter(new FileWriter(testScript));
             switch (currentOperatingSystem) {
                 case Windows: {
-
+                    File newBin = new File("dataSets/" + filename + ".bin");
+                    newBin.createNewFile();
+                    writer.write("bladeRF-cli -l hostedx40-latest.rbf\n");
+                    writer.write("bladeRF-cli -e \"set samplerate " + sampleRate + "\"\n");
+                    writer.write("bladeRF-cli -e \"set bandwidth " + bandwidth + "\"\n");
+                    writer.write("bladeRF-cli -e \"set frequency " + frequency + "\"\n");
+                    writer.write("bladeRF-cli -e \"rx config file=dataSets/" + filename + ".bin format=bin n="
+                            + numSamples + " & rx start & rx wait\"\n");
+                    writer.write("exit\n");
                 } break;case Mac: {
                     writer.write("bladeRF-cli -l hostedx40-latest.rbf\n");
                     writer.write("bladeRF-cli -e \"set samplerate " + sampleRate + "\"\n");
@@ -98,8 +106,13 @@ public class Main {
         }
 
         try {
-            Runtime.getRuntime().exec("chmod u+x " + testScript.getName());
-            Process p = Runtime.getRuntime().exec("./" + testScript.getName());
+            Process p;
+            if (currentOperatingSystem.equals(OperatingSystem.Windows)) {
+                p = Runtime.getRuntime().exec(testScript.getName());
+            } else {
+                Runtime.getRuntime().exec("chmod u+x " + testScript.getName());
+                p = Runtime.getRuntime().exec("./" + testScript.getName());
+            }
 
             // Print output from BladeRF-cli
             /*BufferedReader bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
