@@ -1,4 +1,5 @@
 import com.mongodb.MongoClient;
+import org.bson.Document;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,14 @@ public class MongoConsumer implements Runnable {
                     bb.getShort();
                 }
                 System.out.println(numerator);
+
+                Main.mongoDatabase.getCollection("chart").insertOne(new Document()
+                                    .append("date", iqsp.filename())
+                                    .append("sampleSize", iqsp.sampleSize())
+                                    .append("sampleRate", iqsp.sampleRate())
+                                    .append("bandwidth", iqsp.bandwidth())
+                                    .append("frequency", iqsp.frequency())
+                                    .append("average", numerator));
                 binFile.delete();
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
