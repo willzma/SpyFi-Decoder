@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-
 public class IQSetPacket {
-    private ArrayList<IQPacket> packetSet;
     private String filename;
     private long numSamples;
     private long sampleRate;
@@ -9,7 +6,6 @@ public class IQSetPacket {
     private long frequency;
 
     public IQSetPacket(String filename, long numSamples, long sampleRate, long bandwidth, long frequency) {
-        packetSet = new ArrayList<>();
         this.filename = filename;
         this.numSamples = numSamples;
         this.sampleRate = sampleRate;
@@ -17,7 +13,6 @@ public class IQSetPacket {
         this.frequency = frequency;
     }
 
-    public ArrayList<IQPacket> samples() { return packetSet; }
     public String filename() { return filename; }
     public long sampleSize() { return numSamples; }
     public long sampleRate() { return sampleRate; }

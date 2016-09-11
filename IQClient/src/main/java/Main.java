@@ -1,10 +1,23 @@
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
+
 import java.io.*;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Main {
     public static BlockingQueue<IQSetPacket> setQueue = new ArrayBlockingQueue<>(1000);
+    public static MongoClient mongoClient = new MongoClient("66.175.209.202", 27017);
+    public static MongoDatabase mongoDatabase = mongoClient.getDatabase("dataSets");
+
+    public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.ENGLISH);
 
     private enum OperatingSystem {
         Linux, Mac, Windows
@@ -20,14 +33,18 @@ public class Main {
             currentOperatingSystem = OperatingSystem.Linux;
         }
 
+        MongoConsumer mongoConsumer = new MongoConsumer();
+        Thread t = new Thread(mongoConsumer);
+        t.start();
+
         while (true) {
-            setQueue.add(collectNewDataSet(500000, 1000000, 28000000, 2465000000L));
+            collectNewDataSet(500000, 1000000, 28000000, 2465000000L);
         }
     }
 
-    public static IQSetPacket collectNewDataSet(long numSamples, long sampleRate, long bandwidth, long frequency) {
+    public static void collectNewDataSet(long numSamples, long sampleRate, long bandwidth, long frequency) {
         File testScript = null;
-        UUID newSetID = UUID.randomUUID();
+        String filename = dateFormat.format(new Date());
         switch (currentOperatingSystem) {
             case Windows: {
                 testScript = new File("testScript.bat");
@@ -42,6 +59,11 @@ public class Main {
             testScript.delete();
         }
 
+        if (Files.notExists(Paths.get("dataSets"), LinkOption.NOFOLLOW_LINKS)) {
+            File dataSets = new File("dataSets");
+            dataSets.mkdir();
+        }
+
         BufferedWriter writer = null;
         try {
             writer = new BufferedWriter(new FileWriter(testScript));
@@ -53,7 +75,7 @@ public class Main {
                     writer.write("bladeRF-cli -e \"set samplerate " + sampleRate + "\"\n");
                     writer.write("bladeRF-cli -e \"set bandwidth " + bandwidth + "\"\n");
                     writer.write("bladeRF-cli -e \"set frequency " + frequency + "\"\n");
-                    writer.write("bladeRF-cli -e \"rx config file=/dataSets/" + newSetID.toString() + ".bin format=bin n="
+                    writer.write("bladeRF-cli -e \"rx config file=dataSets/" + filename + ".bin format=bin n="
                             + numSamples + "; rx start; rx wait;\"\n");
                     writer.write("osascript -e 'tell application \"Terminal\" to quit' &\n");
                     writer.write("exit\n");
@@ -62,7 +84,7 @@ public class Main {
                     writer.write("bladeRF-cli -e \"set samplerate " + sampleRate + "\"\n");
                     writer.write("bladeRF-cli -e \"set bandwidth " + bandwidth + "\"\n");
                     writer.write("bladeRF-cli -e \"set frequency " + frequency + "\"\n");
-                    writer.write("bladeRF-cli -e \"rx config file=/dataSets/" + newSetID.toString() + "bin format=bin n="
+                    writer.write("bladeRF-cli -e \"rx config file=dataSets/" + filename + ".bin format=bin n="
                             + numSamples + "; rx start; rx wait;\"\n");
                     writer.write("exit\n");
                 }
@@ -76,22 +98,23 @@ public class Main {
         }
 
         try {
-            runTestScript(testScript.getName());
+            Runtime.getRuntime().exec("chmod u+x " + testScript.getName());
+            Process p = Runtime.getRuntime().exec("./" + testScript.getName());
+
+            // Print output from BladeRF-cli
+            /*BufferedReader bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = "";
+            while ((line = bf.readLine()) != null) {
+                System.out.println(line);
+            }*/
+
+            p.waitFor();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return new IQSetPacket(newSetID.toString(), numSamples, sampleRate, bandwidth, frequency);
-    }
+        setQueue.add(new IQSetPacket(filename, numSamples, sampleRate, bandwidth, frequency));
 
-    public static void runTestScript(String filename) throws Exception {
-        Runtime.getRuntime().exec("chmod u+x " + filename);
-        Process p = Runtime.getRuntime().exec("./" + filename);
-        BufferedReader bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line = "";
-        while ((line = bf.readLine()) != null) {
-            System.out.println(line);
-        }
-        p.waitFor();
+        testScript.delete();
     }
 }
