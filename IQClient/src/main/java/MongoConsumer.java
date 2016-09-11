@@ -1,4 +1,3 @@
-import com.mongodb.MongoClient;
 import org.bson.Document;
 
 import java.io.File;
@@ -35,7 +34,7 @@ public class MongoConsumer implements Runnable {
                                     .append("bandwidth", iqsp.bandwidth())
                                     .append("frequency", iqsp.frequency())
                                     .append("average", numerator));
-                binFile.delete();
+                Files.delete(Paths.get(binFile.getPath() + ".bin"));
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             }
