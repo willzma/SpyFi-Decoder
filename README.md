@@ -4,7 +4,7 @@ PennApps 14 project, takes raw bladeRF data, then packages and formats it for da
 #Inspiration
 From Wikipedia:
 
->####In cryptography, a side-channel attack is any attack based on information gained from the physical implementation of a cryptosystem, rather than brute force or theoretical weaknesses in the algorithms (compare cryptanalysis). 
+####In cryptography, a side-channel attack is any attack based on information gained from the physical implementation of a cryptosystem, rather than brute force or theoretical weaknesses in the algorithms (compare cryptanalysis). 
 
 As tech products become more prevalent, it is our duty to stay on top of the latest threats to our privacy. Our team stumbled across a potential side-channel attack while playing around with a neat piece of hardware called the bladeRF, a software defined radio.
 
